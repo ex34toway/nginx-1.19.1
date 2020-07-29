@@ -364,6 +364,7 @@ main(int argc, char *const *argv)
         return 1;
     }
 
+    // master后台化
     if (!ngx_inherited && ccf->daemon) {
         if (ngx_daemon(cycle->log) != NGX_OK) {
             return 1;
@@ -378,10 +379,12 @@ main(int argc, char *const *argv)
 
 #endif
 
+    // 创建pid文件
     if (ngx_create_pidfile(&ccf->pid, cycle->log) != NGX_OK) {
         return 1;
     }
 
+    // 错误重定向到标准输出
     if (ngx_log_redirect_stderr(cycle) != NGX_OK) {
         return 1;
     }
@@ -395,6 +398,7 @@ main(int argc, char *const *argv)
 
     ngx_use_stderr = 0;
 
+    // 单独进程
     if (ngx_process == NGX_PROCESS_SINGLE) {
         ngx_single_process_cycle(cycle);
 

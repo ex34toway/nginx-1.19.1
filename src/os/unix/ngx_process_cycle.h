@@ -19,11 +19,15 @@
 #define NGX_CMD_TERMINATE      4
 #define NGX_CMD_REOPEN         5
 
-
+// 单独进程
 #define NGX_PROCESS_SINGLE     0
+// 主进程
 #define NGX_PROCESS_MASTER     1
+// 信号进程
 #define NGX_PROCESS_SIGNALLER  2
+// 工作进程
 #define NGX_PROCESS_WORKER     3
+// 辅助进程
 #define NGX_PROCESS_HELPER     4
 
 
