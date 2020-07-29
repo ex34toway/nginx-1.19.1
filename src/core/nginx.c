@@ -203,14 +203,18 @@ main(int argc, char *const *argv)
 
     ngx_debug_init();
 
+    // 初始化系统错误码, 错误码值是由 NGX_SYS_NERR 传入
+    // 先使用的是 strerror, 后面使用ngx_strerror
     if (ngx_strerror_init() != NGX_OK) {
         return 1;
     }
 
+    // 获取启动参数
     if (ngx_get_options(argc, argv) != NGX_OK) {
         return 1;
     }
 
+    // 输出版本信息
     if (ngx_show_version) {
         ngx_show_version_info();
 
@@ -221,8 +225,10 @@ main(int argc, char *const *argv)
 
     /* TODO */ ngx_max_sockets = -1;
 
+    // 初始化时间
     ngx_time_init();
 
+    // 如果开启了 pcre ，初始化 pcre 库 
 #if (NGX_PCRE)
     ngx_regex_init();
 #endif
@@ -230,11 +236,13 @@ main(int argc, char *const *argv)
     ngx_pid = ngx_getpid();
     ngx_parent = ngx_getppid();
 
+    // 初始化日志器
     log = ngx_log_init(ngx_prefix);
     if (log == NULL) {
         return 1;
     }
 
+    // ssl开启
     /* STUB */
 #if (NGX_OPENSSL)
     ngx_ssl_init(log);
@@ -244,24 +252,28 @@ main(int argc, char *const *argv)
      * init_cycle->log is required for signal handlers and
      * ngx_process_options()
      */
-
+    // 初始化 init_cycle 结构
     ngx_memzero(&init_cycle, sizeof(ngx_cycle_t));
     init_cycle.log = log;
     ngx_cycle = &init_cycle;
 
+    // 创建字符串数据池
     init_cycle.pool = ngx_create_pool(1024, log);
     if (init_cycle.pool == NULL) {
         return 1;
     }
 
+    // 保存启动参数
     if (ngx_save_argv(&init_cycle, argc, argv) != NGX_OK) {
         return 1;
     }
 
+    // 处理进程编译参数 
     if (ngx_process_options(&init_cycle) != NGX_OK) {
         return 1;
     }
 
+    // 初始化ngx系统参数
     if (ngx_os_init(log) != NGX_OK) {
         return 1;
     }
@@ -269,7 +281,7 @@ main(int argc, char *const *argv)
     /*
      * ngx_crc32_table_init() requires ngx_cacheline_size set in ngx_os_init()
      */
-
+    // 创建crc32表
     if (ngx_crc32_table_init() != NGX_OK) {
         return 1;
     }
@@ -277,17 +289,20 @@ main(int argc, char *const *argv)
     /*
      * ngx_slab_sizes_init() requires ngx_pagesize set in ngx_os_init()
      */
-
+    // slab size 大小初始化
     ngx_slab_sizes_init();
 
+    // 检查是否添加继承 socket，主要为了实现nginx平滑升级时获取原来的监听fd
     if (ngx_add_inherited_sockets(&init_cycle) != NGX_OK) {
         return 1;
     }
 
+    // 检查需要提前初始化的模块, 比如 检查用户自定义安装的插件
     if (ngx_preinit_modules() != NGX_OK) {
         return 1;
     }
 
+    // 初始化配置文件
     cycle = ngx_init_cycle(&init_cycle);
     if (cycle == NULL) {
         if (ngx_test_config) {

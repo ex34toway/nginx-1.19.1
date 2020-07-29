@@ -40,21 +40,25 @@ ngx_os_init(ngx_log_t *log)
     long         size;
 #endif
 
+    // 初始化平台相关的socket函数
 #if (NGX_HAVE_OS_SPECIFIC_INIT)
     if (ngx_os_specific_init(log) != NGX_OK) {
         return NGX_ERROR;
     }
 #endif
 
+    // 设置进程标题
     if (ngx_init_setproctitle(log) != NGX_OK) {
         return NGX_ERROR;
     }
 
+    // 获取系统内存分页大小
     ngx_pagesize = getpagesize();
     ngx_cacheline_size = NGX_CPU_CACHE_LINE;
 
     for (n = ngx_pagesize; n >>= 1; ngx_pagesize_shift++) { /* void */ }
 
+    // 获取CPU个数
 #if (NGX_HAVE_SC_NPROCESSORS_ONLN)
     if (ngx_ncpu == 0) {
         ngx_ncpu = sysconf(_SC_NPROCESSORS_ONLN);
@@ -65,6 +69,7 @@ ngx_os_init(ngx_log_t *log)
         ngx_ncpu = 1;
     }
 
+    // L1缓存 缓存大小
 #if (NGX_HAVE_LEVEL1_DCACHE_LINESIZE)
     size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
     if (size > 0) {
@@ -72,8 +77,10 @@ ngx_os_init(ngx_log_t *log)
     }
 #endif
 
+    // 获取CPU信息
     ngx_cpuinfo();
 
+    // 文件名柄数限制
     if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
         ngx_log_error(NGX_LOG_ALERT, log, errno,
                       "getrlimit(RLIMIT_NOFILE) failed");
@@ -88,6 +95,7 @@ ngx_os_init(ngx_log_t *log)
     ngx_inherited_nonblocking = 0;
 #endif
 
+    // 初始化随机种子
     tp = ngx_timeofday();
     srandom(((unsigned) ngx_pid << 16) ^ tp->sec ^ tp->msec);
 
