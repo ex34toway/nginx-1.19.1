@@ -222,13 +222,16 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     }
 
 
+    // 初始化core模块配置初始化
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->type != NGX_CORE_MODULE) {
             continue;
         }
 
+        // 取得模块上下文
         module = cycle->modules[i]->ctx;
 
+        // 调用初始化配置
         if (module->create_conf) {
             rv = module->create_conf(cycle);
             if (rv == NULL) {
@@ -269,23 +272,28 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     log->log_level = NGX_LOG_DEBUG_ALL;
 #endif
 
+    // 解析命令行 -g 传入的指令
     if (ngx_conf_param(&conf) != NGX_CONF_OK) {
         environ = senv;
         ngx_destroy_cycle_pools(&conf);
         return NULL;
     }
 
+    // 解析配置文件
     if (ngx_conf_parse(&conf, &cycle->conf_file) != NGX_CONF_OK) {
         environ = senv;
         ngx_destroy_cycle_pools(&conf);
         return NULL;
     }
 
+    // 测试配置文件输出
     if (ngx_test_config && !ngx_quiet_mode) {
         ngx_log_stderr(0, "the configuration file %s syntax is ok",
                        cycle->conf_file.data);
     }
 
+    // 初始化core module模块的config结构
+    // 用于对ngx_core_conf_t中没有配置的字段设置默认值
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->type != NGX_CORE_MODULE) {
             continue;
@@ -293,6 +301,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
         module = cycle->modules[i]->ctx;
 
+        // 初始化配置文件默认值
         if (module->init_conf) {
             if (module->init_conf(cycle,
                                   cycle->conf_ctx[cycle->modules[i]->index])
@@ -311,6 +320,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
+    // 能否打开pid文件
     if (ngx_test_config) {
 
         if (ngx_create_pidfile(&ccf->pid, log) != NGX_OK) {
@@ -323,23 +333,24 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
          * we do not create the pid file in the first ngx_init_cycle() call
          * because we need to write the demonized process pid
          */
-
+        // 如果不是初始化cycle对象，则创建一个pid文件，并且删除旧的pid文件
         old_ccf = (ngx_core_conf_t *) ngx_get_conf(old_cycle->conf_ctx,
                                                    ngx_core_module);
         if (ccf->pid.len != old_ccf->pid.len
             || ngx_strcmp(ccf->pid.data, old_ccf->pid.data) != 0)
         {
             /* new pid file name */
-
+            // 创建新的pid文件
             if (ngx_create_pidfile(&ccf->pid, log) != NGX_OK) {
                 goto failed;
             }
-
+            // 删除旧的pid文件
             ngx_delete_pidfile(old_cycle);
         }
     }
 
 
+    // 测试 lockfile
     if (ngx_test_lockfile(cycle->lock_file.data, log) != NGX_OK) {
         goto failed;
     }

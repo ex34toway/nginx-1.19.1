@@ -312,13 +312,16 @@ main(int argc, char *const *argv)
 
         return 1;
     }
-
+    
+    // 检查配置文件？
     if (ngx_test_config) {
+        // 是否开启了静默标志?
         if (!ngx_quiet_mode) {
             ngx_log_stderr(0, "configuration file %s test is successful",
                            cycle->conf_file.data);
         }
 
+        // 输出配置文件？
         if (ngx_dump_config) {
             cd = cycle->config_dump.elts;
 
@@ -339,10 +342,12 @@ main(int argc, char *const *argv)
         return 0;
     }
 
+    // 是否是发信号操作，比如 nginx -s sig
     if (ngx_signal) {
         return ngx_signal_process(cycle, ngx_signal);
     }
 
+    // 输出一些系统状态
     ngx_os_status(cycle->log);
 
     ngx_cycle = cycle;

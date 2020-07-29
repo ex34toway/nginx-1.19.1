@@ -160,6 +160,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 
         ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0, "sigsuspend");
 
+        // 等待事件
         sigsuspend(&set);
 
         ngx_time_update();
