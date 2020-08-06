@@ -89,6 +89,7 @@ ngx_setproctitle(char *title)
 
     ngx_os_argv[1] = NULL;
 
+    // Linux中进程的名称就存储在argv[0]中
     p = ngx_cpystrn((u_char *) ngx_os_argv[0], (u_char *) "nginx: ",
                     ngx_os_argv_last - ngx_os_argv[0]);
 
@@ -128,6 +129,7 @@ ngx_setproctitle(char *title)
         ngx_memset(p, NGX_SETPROCTITLE_PAD, ngx_os_argv_last - (char *) p);
     }
 
+    // 日志打印
     ngx_log_debug1(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                    "setproctitle: \"%s\"", ngx_os_argv[0]);
 }

@@ -19,6 +19,7 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     struct iovec        iov[1];
     struct msghdr       msg;
 
+    // 发送控制消息
 #if (NGX_HAVE_MSGHDR_MSG_CONTROL)
 
     union {
@@ -76,6 +77,7 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
 
+    // 发送消息
     n = sendmsg(s, &msg, 0);
 
     if (n == -1) {

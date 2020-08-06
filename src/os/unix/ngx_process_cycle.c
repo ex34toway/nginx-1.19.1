@@ -69,7 +69,7 @@ static ngx_cycle_t      ngx_exit_cycle;
 static ngx_log_t        ngx_exit_log;
 static ngx_open_file_t  ngx_exit_log_file;
 
-
+/// 多进程，即 1 master + n work process
 void
 ngx_master_process_cycle(ngx_cycle_t *cycle)
 {
@@ -96,6 +96,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
     sigaddset(&set, ngx_signal_value(NGX_SHUTDOWN_SIGNAL));
     sigaddset(&set, ngx_signal_value(NGX_CHANGEBIN_SIGNAL));
 
+    // 阻塞所有nginx关心的信号
     if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
         ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
                       "sigprocmask() failed");
@@ -122,13 +123,17 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
         p = ngx_cpystrn(p, (u_char *) ngx_argv[i], size);
     }
 
+    // 设置进程标题
     ngx_setproctitle(title);
 
-
+    // 获取core配置
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
+    // 开启子进程
     ngx_start_worker_processes(cycle, ccf->worker_processes,
                                NGX_PROCESS_RESPAWN);
+    
+    // 开启缓存
     ngx_start_cache_manager_processes(cycle, 0);
 
     ngx_new_binary = 0;
@@ -276,6 +281,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 }
 
 
+/// 单进程方式运行函数
 void
 ngx_single_process_cycle(ngx_cycle_t *cycle)
 {
@@ -346,12 +352,16 @@ ngx_start_worker_processes(ngx_cycle_t *cycle, ngx_int_t n, ngx_int_t type)
     ch.command = NGX_CMD_OPEN_CHANNEL;
 
     for (i = 0; i < n; i++) {
-
+        
+        // fork子进程
         ngx_spawn_process(cycle, ngx_worker_process_cycle,
                           (void *) (intptr_t) i, "worker process", type);
 
+        // 子进程id
         ch.pid = ngx_processes[ngx_process_slot].pid;
+        // 进程索引
         ch.slot = ngx_process_slot;
+        // 文件描述符
         ch.fd = ngx_processes[ngx_process_slot].channel[0];
 
         ngx_pass_open_channel(cycle, &ch);

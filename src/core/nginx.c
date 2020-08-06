@@ -360,6 +360,7 @@ main(int argc, char *const *argv)
 
 #if !(NGX_WIN32)
 
+    // 开始绑定信号处理相关
     if (ngx_init_signals(cycle->log) != NGX_OK) {
         return 1;
     }
